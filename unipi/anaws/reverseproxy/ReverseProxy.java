@@ -221,7 +221,7 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 	@Override
 	public String subscribeClient(String clientIP, Integer k) {
 				
-		ResponseMergingLogic.getInstance().insertSubscription(clientIP, k);
+		ResponseMergingLogic.getInstance().insertSubscription(clientIP);
 			
 		ServerAllocation allocationManager = new ServerAllocation();
 		allocationManager.handleSubscribe(clientIP,k);
