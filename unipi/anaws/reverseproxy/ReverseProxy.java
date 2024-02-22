@@ -58,16 +58,21 @@ import net.floodlightcontroller.routing.IRoutingService;
 import net.floodlightcontroller.routing.Path;
 import net.floodlightcontroller.util.FlowModUtils;
 
+
+/*
+ * ReverseProxy module 
+ * */
+
 public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IReverseProxyREST {
-	
-	// servizi da aggiungere
-	// - servizio device (per ottenere gli attachment point)
-	// - servizio routing (per ottenere la lista di switch)
 	
 	private static final int IDLE_TIMEOUT = 0;
 	private static final int HARD_TIMEOUT = 0;
 	private final static IPv4Address VIRTUAL_SERVER_IP = IPv4Address.of("10.0.0.254");
 	private final static MacAddress VIRTUAL_SERVER_MAC =  MacAddress.of("00:00:00:00:00:FE");
+	
+	/*
+	 * Service dependencies of the ReverseProxy module 
+	 **/
 	
 	protected IOFSwitchService switchService;
 	protected IRoutingService routingService;
@@ -161,24 +166,16 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////
 	// ////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Application logic methods 
+
+	/*
+	 * Inside this receive method we handle the case for the ARP request (to the VIRTUAL_IP)
+	 * This code is used only to pass to the forwarding module the icmp packets for neglecting other packets 
+	 * to use the forwarding module. If the packet is an IP one we handle in the HandleIpPacket both replication of packets
+	 * or merging logic*/
+
 	
 	@Override
 	public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {	
-		// System.out.println("il dpid dello switch a cui" + targetIpAddress + "e connesso = " + clientDevice.toString());
-		
-		// qua devo controllare se il sorgente sia un ip di uno dei server, se lo e'
-		// allora devo aggiornare la struttura dati che mi tiene conto delle richieste pendenti
-		// se trovo che ho ricevuto tutte le risposte allora inoltro allo switch che mi ha mandato
-		// il packet il pacchetto di partenza, cambiando solamente src_ip e src_mac in quelli del server virtuale
-		
-		// se il sorgente non fa parte di quello dei server allora qua devo gestire sta situazione 
-		// possibilmente non dovrei fare niente
-		
-		// la richiesta comunque mi genera un packet_in, quindi devo controllare se l indirizzo ip sorgente puo essere
-		// di uno dei client perche io poi devo generare k pacchetti da inoltrare poi nella rete, questi k pacchetti devo avere
-		// destinazioni diverse, una volta fatto questo possono viaggiare tranquillamente attraverso la rete 
-		
-		
 
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx,
             IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
@@ -218,6 +215,12 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 		return Command.CONTINUE;
 	}
 
+	/*
+	 * In the subscribe method we create the mapping for a  certain client 
+	 * and for each couple (server,client) we create the DIRECT and REVERSE path
+	 * */
+
+	
 	@Override
 	public String subscribeClient(String clientIP, Integer k) {
 				
@@ -244,32 +247,16 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 				return "SUBSCRIPTION FALLITA";
 			}
 		}
-		
-		
-		// TESTING 
-		// qua assegni i vari server al client e poi mi printi i server che hai assegnato
-		// ClientServerMapping clientServerMapping = ClientServerMapping.getInstance();
-		// clientServerMapping.insertMapping(clientIP, "10.0.0.69");
-		
-		
-		// qua invece mi fai il setup della direct e reverse path per ogni server che hai associato
-		// al client 
-		
-		// cicli per ogni server assegnato e crei le path
-		
-		// nella path diretta va matchato il pacchetto con | ip_client | ip_server | --> azione: inoltro del pacchetto su una delle porte di quel path
-		
-		
-		// log.debug("LOG: Inserted new client" + clientServerMapping.getMappings());
-		
-	
-		
+				
 		return "SUBSCRIBE COMPLETATA, SERVER ASSEGNATI: " + assignedServers;
 	}
 	
 	
-	
-	// funzione di utilita che mi ritorna un oggetto device passando come argomento il suo ip
+	/*
+	 * Utility method used to retrieve the IDevice descriptor for a given address
+	 * NB: Do the ping before 
+	 **/
+
 	public IDevice getDeviceByIpAddress(String address) {
 		Collection<? extends IDevice> devices = deviceService.getAllDevices();
 		
@@ -282,6 +269,13 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 		}
 		return null;
 	}
+	
+	/*
+	 * For a given client and a given server, we use the setDirectPath for 
+	 * creating the flow tables so that we have a path for packets flowing 
+	 * from Client ----> Server
+	 **/
+
 	
 	public void setDirectPath(String clientAddress, String serverAddress) {
 
@@ -358,6 +352,14 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 
 	}
 	
+	
+
+	/*
+	 * For a given client and a given server, we use the setReversePath for 
+	 * creating the flow tables so that we have a path for packets flowing 
+	 * from Server ----> Client
+	 **/
+	
 	public void setReversePath(String clientAddress,String serverAddress) {
 
 		String clientIpAddress = IPv4Address.of(clientAddress).toString();	
@@ -428,6 +430,11 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 		}
 	}
 	
+	
+
+	/*
+	 Method used for responding to ARP requests for the VIRTUAL_IP
+	 */
 	private void handleARPRequest(IOFSwitch sw, OFPacketIn pi,
 			FloodlightContext cntx) {
 
@@ -483,6 +490,11 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 		sw.write(pob.build());
 	}
 	
+
+	/*
+	 The handleIpPacket is used to implement the sending of replicated packets (at request time)
+	 and merging the responsed at response time
+	 */
 	private void handleIPPacket(IOFSwitch sw, OFPacketIn pi,
 			FloodlightContext cntx) {
 
@@ -495,9 +507,7 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 		// Cast the IP packet
 		IPv4 ipv4 = (IPv4) eth.getPayload();
 		
-		/*if(!ipv4.getSourceAddress().equals(IPv4Address.of("10.0.0.70"))) {
-			return;
-		}*/
+	
 			
 		System.out.printf("Processing IPv4 packet\n");
 		System.out.printf("il pacchetto che sto analizzando proviene da " + ipv4.getSourceAddress() + "diretto ad " + ipv4.getDestinationAddress());
@@ -516,6 +526,13 @@ public class ReverseProxy implements IOFMessageListener, IFloodlightModule, IRev
 			sendPacketReplicates(sw,ipv4,pi,cntx);
 		}
 	}
+	
+
+	/*
+	 * Method used for creating K packet out that specify to forward packets with different dst addresses (one for each)
+	 * physical server, used at request time.
+	 *  
+	 **/
 	
 	public void sendPacketReplicates(IOFSwitch sw, IPv4 ipv4, OFPacketIn pi , FloodlightContext cntx) {
 		

@@ -21,13 +21,16 @@ def create_custom_topology():
  
 	server_host1 = net.addHost('serv1', ip = '10.0.0.70/24')
 	server_host2 = net.addHost('serv2', ip = '10.0.0.71/24')
- 
+        server_host3 = net.addHost('serv3', ip = '10.0.0.72/24')
+
+
 	# Connect hosts to switches
 	net.addLink(host1_upper, upper_switch)
 	net.addLink(host2_upper, upper_switch)
 	net.addLink(server_host1, lower_switch1)
 	net.addLink(server_host2, lower_switch2)
- 
+        net.addLink(server_host3, lower_switch1)
+
 	# Connect switches
 	net.addLink(upper_switch, middle_switch)
 	net.addLink(middle_switch, lower_switch1)

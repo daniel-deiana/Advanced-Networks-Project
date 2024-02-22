@@ -9,6 +9,11 @@ import net.floodlightcontroller.core.web.ControllerSwitchesResource;
 import net.floodlightcontroller.core.web.LoadedModuleLoaderResource;
 import net.floodlightcontroller.restserver.RestletRoutable;
 
+/*
+ * Mapping urls with the given resource classes 
+ * */
+
+
 public class ReverseProxyWebRoutable implements RestletRoutable{
 
 	@Override

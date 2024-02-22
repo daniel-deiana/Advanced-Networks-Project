@@ -1,6 +1,12 @@
 package it.unipi.anaws.reverseproxy;
 import java.util.*;
 
+/*
+ * This class is used to store the state of mappings between servers and the clients
+ * that they are assigned to
+ * */
+
+
 public class ServerAllocation {
     private ClientServerMapping clientServerMapping = ClientServerMapping.getInstance();
 

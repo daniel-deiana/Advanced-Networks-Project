@@ -67,5 +67,4 @@ public class ClientServerMapping {
     	return res;
     }
     
-    // TODO: metodo per l eliminazione di un client dalle liste dei vari server se si decidesse di fare l'unsubscribe
 }

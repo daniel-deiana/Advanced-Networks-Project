@@ -41,7 +41,9 @@ public class ResponseMergingLogic {
     public static ResponseMergingLogic getInstance() {
     	return instance;
     }
- 
+    
+    
+    	
     public void insertSubscription(String client) {
     	System.out.println("ip subscribe:"+client);
     	synchronized(serverRemaining) {
@@ -49,7 +51,13 @@ public class ResponseMergingLogic {
     		serverRemaining.put(client, assignedServers);
     	}
     }
-	    
+	
+
+	/*
+	 * Method used to implement the merging logic, we check if all responses are arrived and if so we 
+	 * send out one response, if not we do nothing 
+	 **/
+    
 	public boolean receiveServerResponse(IPv4 ipv4Packet, IOFSwitch sw, OFPacketIn pi){
 	        int destIpAddress = ipv4Packet.getDestinationAddress().getInt();
 	        String clientDest = IPv4.fromIPv4Address(destIpAddress);

@@ -6,6 +6,12 @@ import org.restlet.resource.ServerResource;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+/*
+ * This class is used to handle the request to the subscribe resource, 
+ * it accepts a Json with a given structure (K,client ip)
+ * */
+
 public class SubscribeClientResource extends ServerResource {
 	@Post("json")
 	public String subscribe(String fmJson) {
